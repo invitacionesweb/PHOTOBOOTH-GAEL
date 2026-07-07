@@ -362,11 +362,25 @@ async function confirmShare() {
   if(CONFIG.scriptUrl) {
     try {
       const dataUrl = document.getElementById('composeCanvas').toDataURL('image/jpeg', 0.82);
-      await fetch(CONFIG.scriptUrl, {
+      const resp = await fetch(CONFIG.scriptUrl, {
         method: 'POST',
         body: JSON.stringify({ image:dataUrl, name:CONFIG.kidName, cliente:CONFIG.cliente })
       });
-    } catch(_) {}
+      const text = await resp.text();
+      console.log('Respuesta del script:', resp.status, text);
+      if(!resp.ok || text.toLowerCase().includes('error') || text.toLowerCase().includes('no encontrado')) {
+        statusEl.textContent = '⚠️ No se pudo compartir: ' + text;
+        await new Promise(r => setTimeout(r, 2500));
+        goToFinal();
+        return;
+      }
+    } catch(err) {
+      console.error('Error al compartir:', err);
+      statusEl.textContent = '⚠️ Error de conexión: ' + err.message;
+      await new Promise(r => setTimeout(r, 2500));
+      goToFinal();
+      return;
+    }
   }
   statusEl.textContent = '¡Listo! Los papis ya tienen la foto 🥰';
   await new Promise(r => setTimeout(r, 1000));
